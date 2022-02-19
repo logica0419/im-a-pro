@@ -6,6 +6,7 @@ require (
 	github.com/labstack/echo/v4 v4.6.3
 	github.com/labstack/gommon v0.3.1
 	github.com/line/line-bot-sdk-go/v7 v7.12.1
+	gocv.io/x/gocv v0.29.0
 	google.golang.org/api v0.69.0
 )
 
