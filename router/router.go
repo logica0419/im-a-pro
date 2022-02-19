@@ -1,17 +1,20 @@
 package router
 
 import (
+	"context"
 	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 	"github.com/line/line-bot-sdk-go/v7/linebot"
+	"google.golang.org/api/drive/v3"
 )
 
 type Router struct {
 	e      *echo.Echo
 	bot    *linebot.Client
+	drive  *drive.Service
 	token  string
 	domain string
 }
@@ -22,16 +25,29 @@ func NewRouter() (*Router, error) {
 		return nil, err
 	}
 
+	ctx := context.Background()
+	drive, err := drive.NewService(ctx)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	e := newEcho()
+
 	r := &Router{
 		e:      e,
 		bot:    bot,
+		drive:  drive,
 		token:  os.Getenv("ACCESS_TOKEN"),
 		domain: os.Getenv("DOMAIN"),
 	}
 
 	r.e.POST("/", r.handleLineEvent)
-	r.e.Static("/", "images")
+	r.e.GET("/:imageName", r.handleImage)
+
+	err = r.initIDCache()
+	if err != nil {
+		return nil, err
+	}
 
 	return r, nil
 }

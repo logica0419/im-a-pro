@@ -3,7 +3,6 @@ package router
 import (
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/line/line-bot-sdk-go/v7/linebot"
@@ -41,19 +40,13 @@ func (r *Router) handleLineEvent(c echo.Context) error {
 }
 
 func (r *Router) handleImageMessage(userID, replyToken string, mes *linebot.ImageMessage) error {
-	img, err := r.getImage(mes.ID)
+	img, err := r.getImageFromLine(mes.ID)
 	if err != nil {
 		return err
 	}
 	defer img.Close()
 
-	file, err := os.Create("./images/" + mes.ID + ".jpg")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, img)
+	err = r.uploadImageToDrive(mes.ID+".jpg", img)
 	if err != nil {
 		return err
 	}
@@ -66,7 +59,7 @@ func (r *Router) handleImageMessage(userID, replyToken string, mes *linebot.Imag
 	return nil
 }
 
-func (r *Router) getImage(messageID string) (io.ReadCloser, error) {
+func (r *Router) getImageFromLine(messageID string) (io.ReadCloser, error) {
 	req, err := http.NewRequest("GET", "https://api-data.line.me/v2/bot/message/"+messageID+"/content", nil)
 	if err != nil {
 		return nil, err
