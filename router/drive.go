@@ -1,35 +1,15 @@
 package router
 
 import (
+	"fmt"
 	"io"
-	"net/http"
 
-	"github.com/labstack/echo/v4"
 	"google.golang.org/api/drive/v3"
 )
 
-func (r *Router) handleImage(e echo.Context) error {
-	imageName := e.Param("imageName")
-	imageID := imageIDCache[imageName]
-
-	if imageID == "" {
-		return echo.NewHTTPError(http.StatusNotFound, "Image not found")
-	}
-
-	res, err := r.drive.Files.Get(imageID).Download()
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	return e.Stream(http.StatusOK, "image/jpeg", res.Body)
-}
-
-var imageIDCache map[string]string
+var imageIDCache = map[string]string{}
 
 func (r *Router) initIDCache() error {
-	imageIDCache = make(map[string]string)
-
 	fileList, err := r.drive.Files.List().Fields("files(id, name, mimeType)").Do()
 	if err != nil {
 		return err
@@ -44,6 +24,21 @@ func (r *Router) initIDCache() error {
 	}
 
 	return nil
+}
+
+func (r *Router) getImageFromDrive(imageName string) (io.Reader, error) {
+	imageID := imageIDCache[imageName]
+
+	if imageID == "" {
+		return nil, fmt.Errorf("image not found")
+	}
+
+	res, err := r.drive.Files.Get(imageID).Download()
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Body, nil
 }
 
 func (r *Router) uploadImageToDrive(name string, image io.Reader) error {

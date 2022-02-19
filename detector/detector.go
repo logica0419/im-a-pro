@@ -3,8 +3,6 @@ package detector
 import (
 	"fmt"
 	"image"
-	_ "image/jpeg"
-	_ "image/png"
 	"os"
 
 	"gocv.io/x/gocv"
