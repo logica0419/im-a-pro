@@ -10,8 +10,10 @@ import (
 )
 
 type Router struct {
-	e   *echo.Echo
-	bot *linebot.Client
+	e      *echo.Echo
+	bot    *linebot.Client
+	token  string
+	domain string
 }
 
 func NewRouter() (*Router, error) {
@@ -22,11 +24,14 @@ func NewRouter() (*Router, error) {
 
 	e := newEcho()
 	r := &Router{
-		e:   e,
-		bot: bot,
+		e:      e,
+		bot:    bot,
+		token:  os.Getenv("ACCESS_TOKEN"),
+		domain: os.Getenv("DOMAIN"),
 	}
 
 	r.e.POST("/", r.handleLineEvent)
+	r.e.Static("/", "images")
 
 	return r, nil
 }
