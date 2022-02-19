@@ -3,13 +3,12 @@ package router
 import (
 	"fmt"
 	"image"
-	"image/color"
 	"image/jpeg"
 	"os"
 
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 	"github.com/logica0419/im-a-pro/detector"
-	"gocv.io/x/gocv"
+	"github.com/logica0419/im-a-pro/editor"
 )
 
 func (r *Router) handleTextMessage(userID, replyToken string, mes *linebot.TextMessage) error {
@@ -21,7 +20,6 @@ func (r *Router) handleTextMessage(userID, replyToken string, mes *linebot.TextM
 		}
 		return fmt.Errorf("image not found")
 	}
-	defer delete(imageCache, userID)
 
 	rectangles, err := detector.DetectFace(img)
 	if err != nil {
@@ -30,24 +28,30 @@ func (r *Router) handleTextMessage(userID, replyToken string, mes *linebot.TextM
 
 	switch mes.Text {
 	case "Detect":
-		mat, err := gocv.ImageToMatRGB(img)
+		newImg, err := editor.PutDetectedRect(rectangles, img)
 		if err != nil {
 			return err
-		}
-		defer mat.Close()
-
-		for _, rectangle := range rectangles {
-			gocv.Rectangle(&mat, rectangle, color.RGBA{0, 0, 255, 0}, 10)
 		}
 
-		newImg, err := mat.ToImage()
+		err = r.replyImage(newImg, mes.ID, replyToken)
 		if err != nil {
 			return err
 		}
-		err = r.replyImage(newImg, userID, replyToken)
+
+		delete(imageCache, userID)
+
+	case "Sun":
+		newImg, err := editor.PutSun(rectangles, img)
 		if err != nil {
 			return err
 		}
+
+		err = r.replyImage(newImg, mes.ID, replyToken)
+		if err != nil {
+			return err
+		}
+
+		delete(imageCache, userID)
 
 	default:
 		_, err := r.bot.ReplyMessage(replyToken, linebot.NewTextMessage(imageReply)).Do()

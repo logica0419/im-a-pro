@@ -13,7 +13,7 @@ import (
 
 var imageCache = map[string]image.Image{}
 
-const imageReply = "次のうち、どの処理を行いますか？\n" + "Detect (顔の検出)"
+const imageReply = "次のうち、どの処理を行いますか？\n" + "・Detect (顔の検出)\n" + "・Sun (顔に太陽を付ける)"
 
 func (r *Router) handleImageMessage(userID, replyToken string, mes *linebot.ImageMessage) error {
 	if _, ok := imageCache[mes.ID]; ok {
